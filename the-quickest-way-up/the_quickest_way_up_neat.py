@@ -7,67 +7,57 @@ LOGGING = False
 
 class QuickestWay(object):
     ''' Class to scan the given input and perform the calculations '''
-    
     def __init__(self):
-        self.levels = {} # dictionary of levels
+        self.layers = {} # dictionary of layers
         self.edges = {} # dictionary of edges
 
-    def bfs(self, verts, tun, current):
+    def bfs(self, verts, tunnels, current):
         ''' Breadth first search. Creates a tree of edges in which
         each edge points along the fastest route to it's parent '''
         self.log("EXAMINING: %s", (str(current)))
-        # store the verts for the next layer
-        next_list = set([])
-        # for every vert in the current layer
-        for vert in current:
-            if vert == 101:
-                return
-            self.log("at vert %d", (vert))
-            if vert in tun:
-                self.log(" => skipping because this isn't a real node")
-                continue
-            # for every child vert
-            for child in verts[vert]:
-                # if child has not already got a level assigned
-                if child not in self.levels:
-                    self.log("  child %d has no level yet, assigning %d",
-                             (child, self.levels[vert] + 1))
-                    # set the level for the child
-                    self.levels[child] = self.levels[vert]+1
-                    # create an edge entry from the child to the parent
-                    self.edges[child] = vert
-                    # add the child to the list of verts in the next array
-                    next_list.add(child)
-                else:
-                    # if the child has already been linked to and the level is the same
-                    self.log("  child %d of level %d HAS parent %d, we are at level %d",
-                             (child, self.levels[child], self.edges[child], self.levels[vert]+1))
-                    if self.levels[child] >= self.levels[vert]+1:
-                        self.log("   level of child is the same or above as what we are targeting")
-                        # change the edge to link to this vert, if this vert is higher.
-                        if vert > self.edges[child]:
-                            self.edges[child] = vert
-                            self.levels[child] = self.levels[vert] + 1
-                            self.log("    changing it to have parent %d, changing level to %d",
-                                     (vert, self.levels[child]))
-                            # add the child to the list of verts in the next array
-                            next_list.add(child)
-        if next_list:
-            # call bfs for the next vertex
-            self. bfs(verts, tun, next_list)
+        next_layer = set([]) # set of verticies for next layer
 
-    def get_short_path(self, start=100, rolls=0):
+        for vert in current: # for every vert in the current layer
+
+            self.log("at vert %d", (vert))
+
+            for child in verts[vert]: # for all if it's children
+
+                if child not in self.layers: # if child is not already in a layer
+
+                    self.log("  child %d has no level yet, assigning %d",
+                             (child, self.layers[vert] + 1))
+
+                    # set the level, create child-parent edge, add child to next layer list
+                    self.layers[child] = self.layers[vert]+1
+                    self.edges[child] = vert
+                    next_layer.add(child)
+
+                elif self.layers[child] >= self.layers[vert] + 1 and vert > self.edges[child]:
+
+                    self.log("  child %d of level %d HAS parent %d: we are at level %d," +
+                             " changing it to have parent %d",
+                             (child, self.layers[child], self.edges[child],
+                              self.layers[vert]+1, vert))
+
+                    # child should have lower layer
+                    self.edges[child] = vert
+                    self.layers[child] = self.layers[vert] + 1
+                    next_layer.add(child)
+
+        if next_layer:
+            # call bfs for the next vertex, otherwise, method ends
+            self. bfs(verts, tunnels, next_layer)
+
+    def count_hops(self, start=100, rolls=0):
         ''' trace the shortest path through the tree given by the bfs '''
-        # if we're at the start, return
         if start == 1:
-            self.log("found path with %d rolls", (rolls))
-            return rolls
+            return rolls # return rolls to get to square 1
         elif start not in self.edges:
-            # this has no way through
-            return -1
+            return -1 # no way to get to square 1 (e.g. all 6 squares before the finish have snakes)
         else:
             self.log("at %d, following to %d, current rolls %d", (start, self.edges[start], rolls))
-            return self.get_short_path(self.edges[start], rolls+1)
+            return self.count_hops(self.edges[start], rolls+1)
 
     @classmethod
     def log(cls, string, params=None):
@@ -123,10 +113,10 @@ class QuickestWay(object):
                         verticies[i].add(i+dest)
 
             self.edges = {1:0} # set up edge from start node to null node (avoids error)
-            self.levels = {1:1} # set node 1 as level 1
+            self.layers = {1:1} # set node 1 as level 1
             # create BFS tree from this vert set
             self.bfs(verticies, tunnels, set([1]))
-            print self.get_short_path()
+            print self.count_hops()
 
 QUICKEST_WAY = QuickestWay()
 QUICKEST_WAY.run()

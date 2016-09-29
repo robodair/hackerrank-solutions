@@ -4,6 +4,6 @@
     "version": "0.1.0",
     "command": "python",
     "isShellCommand": true,
-    "args": ["${file}", "input4.txt"],
+    "args": ["${file}", "input1.txt"],
     "showOutput": "always"
 }
